@@ -1,11 +1,36 @@
-use eframe::{run_native, epi::App, egui::CentralPanel, NativeOptions};
+pub mod champr;
 
-struct ChampR;
+use champr::ChampR;
+use eframe::{
+    egui::{CentralPanel, ScrollArea, Vec2, Visuals},
+    epi::App,
+    run_native, NativeOptions,
+};
 
 impl App for ChampR {
-    fn update(&mut self, ctx: &eframe::egui::CtxRef, frame: &mut eframe::epi::Frame<'_>) {
+    fn setup(
+        &mut self,
+        ctx: &eframe::egui::CtxRef,
+        _frame: &mut eframe::epi::Frame<'_>,
+        _storage: Option<&dyn eframe::epi::Storage>,
+    ) {
+        self.configure_fonts(ctx);
+    }
+
+    fn update(&mut self, ctx: &eframe::egui::CtxRef, _frame: &mut eframe::epi::Frame<'_>) {
+        ctx.request_repaint();
+
+        if self.config.dark_mode {
+            ctx.set_visuals(Visuals::dark());
+        } else {
+            ctx.set_visuals(Visuals::light());
+        }
+
         CentralPanel::default().show(ctx, |ui| {
-            ui.label("something");
+            self.render_top(ui);
+            ScrollArea::auto_sized().show(ui, |ui| {
+                self.render_list(ui);
+            });
         });
     }
 
@@ -15,9 +40,8 @@ impl App for ChampR {
 }
 
 fn main() {
-    println!("hello");
-    let app = ChampR;
-    let win_option = NativeOptions::default();
-
+    let app = ChampR::new();
+    let mut win_option = NativeOptions::default();
+    win_option.initial_window_size = Some(Vec2::new(360., 640.));
     run_native(Box::new(app), win_option);
 }
