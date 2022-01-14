@@ -1,13 +1,15 @@
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Source {
-    label: String,
-    value: String,
-    isAram: Option<bool>,
-    isUrf: Option<bool>,
+    pub label: String,
+    pub value: String,
+    pub is_aram: Option<bool>,
+    pub is_urf: Option<bool>,
 }
 
 pub async fn fetch_source_list() -> Result<Vec<Source>, Box<dyn Error>> {
@@ -111,77 +113,6 @@ pub struct NpmInfo {
     pub main: String,
     #[serde(rename = "dist-tags")]
     pub dist_tags: DistTags,
-    // pub author: Author,
-    // pub license: String,
-    // pub git_head: String,
-    // #[serde(rename = "_id")]
-    // pub id: String,
-    // #[serde(rename = "_nodeVersion")]
-    // pub node_version: String,
-    // #[serde(rename = "_npmVersion")]
-    // pub npm_version: String,
-    // pub dist: Dist,
-    // #[serde(rename = "_npmUser")]
-    // pub npm_user: NpmUser,
-    // pub directories: Directories,
-    // pub maintainers: Vec<Maintainer>,
-    // #[serde(rename = "_npmOperationalInternal")]
-    // pub npm_operational_internal: NpmOperationalInternal,
-    // #[serde(rename = "_hasShrinkwrap")]
-    // pub has_shrinkwrap: bool,
-    // #[serde(rename = "_cnpmcore_publish_time")]
-    // pub cnpmcore_publish_time: String,
-    // #[serde(rename = "publish_time")]
-    // pub publish_time: i64,
-    // #[serde(rename = "_cnpm_publish_time")]
-    // pub cnpm_publish_time: i64,
-    // pub readme: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Author {
-    pub name: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Dist {
-    pub integrity: String,
-    pub shasum: String,
-    pub tarball: String,
-    pub file_count: i64,
-    pub unpacked_size: i64,
-    #[serde(rename = "npm-signature")]
-    pub npm_signature: String,
-    pub size: i64,
-    pub noattachment: bool,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NpmUser {
-    pub name: String,
-    pub email: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Directories {
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Maintainer {
-    pub name: String,
-    pub email: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NpmOperationalInternal {
-    pub host: String,
-    pub tmp: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -193,12 +124,74 @@ pub struct DistTags {
 pub async fn fetch_npm_info(source: String) -> Result<NpmInfo, Box<dyn Error>> {
     let url = format!("https://registry.npmmirror.com/{}/latest", source);
     match reqwest::get(url).await {
-      Ok(resp) => {
-        match resp.json::<NpmInfo>().await {
-          Ok(json) => Ok(json),
-          Err(e) => Result::Err(Box::new(e))
-        }
-      }
-      Err(e) => Result::Err(Box::new(e))
+        Ok(resp) => match resp.json::<NpmInfo>().await {
+            Ok(json) => Ok(json),
+            Err(e) => Result::Err(Box::new(e)),
+        },
+        Err(e) => Result::Err(Box::new(e)),
+    }
+}
+
+pub async fn fetch_version_list() -> Result<Vec<String>, Box<dyn Error>> {
+    let url = "https://ddragon.leagueoflegends.com/api/versions.json";
+    match reqwest::get(url).await {
+        Ok(resp) => match resp.json::<Vec<String>>().await {
+            Ok(json) => Ok(json),
+            Err(e) => Result::Err(Box::new(e)),
+        },
+        Err(e) => Result::Err(Box::new(e)),
+    }
+}
+
+#[serde_as]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChampListResp {
+    #[serde(rename = "type")]
+    pub type_field: String,
+    pub format: String,
+    pub version: String,
+    pub data: HashMap<String, ChampInfo>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChampInfo {
+    pub version: String,
+    pub id: String,
+    pub key: String,
+    pub name: String,
+    pub title: String,
+    // pub blurb: String,
+    // pub info: Info,
+    pub image: Image,
+    pub tags: Vec<String>,
+    // pub partype: String,
+    // pub stats: Stats,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Image {
+    pub full: String,
+    pub sprite: String,
+    pub group: String,
+    pub x: i64,
+    pub y: i64,
+    pub w: i64,
+    pub h: i64,
+}
+
+pub async fn fetch_champ_list(version: String) -> Result<ChampListResp, Box<dyn Error>> {
+    let url = format!(
+        "http://ddragon.leagueoflegends.com/cdn/{}/data/en_US/champion.json",
+        version
+    );
+    match reqwest::get(url).await {
+        Ok(resp) => match resp.json::<ChampListResp>().await {
+            Ok(json) => Ok(json),
+            Err(e) => Result::Err(Box::new(e)),
+        },
+        Err(e) => Result::Err(Box::new(e)),
     }
 }

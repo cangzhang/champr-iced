@@ -19,4 +19,13 @@ pub async fn main() {
       println!("{:?}", e)
     }
   }
+
+  match web::fetch_champ_list(String::from("12.1.1")).await {
+    Ok(list) => {
+      println!("{:?}", list)
+    }
+    Err(e) => {
+      println!("{:?}", e)
+    }
+  }
 }
