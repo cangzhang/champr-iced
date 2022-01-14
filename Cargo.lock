@@ -194,6 +194,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "api",
+ "futures",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "tokio",
+]
+
+[[package]]
 name = "clipboard-win"
 version = "4.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

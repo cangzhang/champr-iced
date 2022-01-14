@@ -1,5 +1,5 @@
 [workspace]
-members = ["ui", "api"]
+members = ["ui", "api", "cli"]
 
 [profile.release]
 opt-level = 'z'     # Optimize for size.
