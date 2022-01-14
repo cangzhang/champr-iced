@@ -39,12 +39,8 @@ impl SourceList {
         }
 
         Self {
-            variants: Variant::new(),
-            selected: vec![],
-            input: text_input::State::new(),
-            input_value: String::new(),
             items,
-            btn: button::State::new(),
+            ..Self::default()
         }
     }
 }
