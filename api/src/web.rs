@@ -3,6 +3,10 @@ use std::{collections::HashMap, error::Error};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
+pub const CDN_JSDELIVR: &str = "https://cdn.jsdelivr.net";
+pub const NPM_MIRROR: &str = "https://registry.npmmirror.com";
+pub const CDN_DDRAGON: &str = "https://ddragon.leagueoflegends.com";
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Source {
@@ -13,7 +17,10 @@ pub struct Source {
 }
 
 pub async fn fetch_source_list() -> Result<Vec<Source>, Box<dyn Error>> {
-    let url = "https://cdn.jsdelivr.net/gh/champ-r/source-list/index.json";
+    let url = format!(
+        "{cdn}/gh/champ-r/source-list/index.json",
+        cdn = CDN_JSDELIVR
+    );
     match reqwest::get(url).await {
         Ok(resp) => match resp.json::<Vec<Source>>().await {
             Ok(json) => Ok(json),
@@ -26,11 +33,11 @@ pub async fn fetch_source_list() -> Result<Vec<Source>, Box<dyn Error>> {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChampData {
-    pub index: i64,
+    pub index: u32,
     pub id: String,
     pub version: String,
     pub official_version: String,
-    pub timestamp: i64,
+    pub timestamp: u64,
     pub alias: String,
     pub name: String,
     pub position: String,
@@ -44,13 +51,13 @@ pub struct ChampData {
 #[serde(rename_all = "camelCase")]
 pub struct ItemBuild {
     pub title: String,
-    pub associated_maps: Vec<i64>,
-    pub associated_champions: Vec<i64>,
+    pub associated_maps: Vec<u32>,
+    pub associated_champions: Vec<u32>,
     pub blocks: Vec<Block>,
     pub map: String,
     pub mode: String,
     // pub preferred_item_slots: Vec<Value>,
-    pub sortrank: i64,
+    pub sortrank: u32,
     pub started_from: String,
     #[serde(rename = "type")]
     pub type_field: String,
@@ -68,7 +75,7 @@ pub struct Block {
 #[serde(rename_all = "camelCase")]
 pub struct Item {
     pub id: String,
-    pub count: i64,
+    pub count: u64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -77,12 +84,12 @@ pub struct Rune {
     pub alias: String,
     pub name: String,
     pub position: String,
-    pub pick_count: i64,
+    pub pick_count: u64,
     pub win_rate: String,
-    pub primary_style_id: i64,
-    pub sub_style_id: i64,
-    pub selected_perk_ids: Vec<i64>,
-    pub score: i64,
+    pub primary_style_id: u32,
+    pub sub_style_id: u32,
+    pub selected_perk_ids: Vec<u32>,
+    pub score: f64,
 }
 
 pub async fn fetch_champ_detail(
@@ -91,8 +98,11 @@ pub async fn fetch_champ_detail(
     champ_name: String,
 ) -> Result<Vec<ChampData>, Box<dyn Error>> {
     let url = format!(
-        "https://cdn.jsdelivr.net/npm/{}@{}/{}.json",
-        source, version, champ_name
+        "{cdn}/{source}@{version}/{champ_name}.json",
+        cdn = CDN_JSDELIVR,
+        source = &source,
+        version = &version,
+        champ_name = &champ_name
     );
     match reqwest::get(url).await {
         Ok(resp) => match resp.json::<Vec<ChampData>>().await {
@@ -122,7 +132,7 @@ pub struct DistTags {
 }
 
 pub async fn fetch_npm_info(source: String) -> Result<NpmInfo, Box<dyn Error>> {
-    let url = format!("https://registry.npmmirror.com/{}/latest", source);
+    let url = format!("{cdn}/{source}/latest", cdn = NPM_MIRROR, source = &source);
     match reqwest::get(url).await {
         Ok(resp) => match resp.json::<NpmInfo>().await {
             Ok(json) => Ok(json),
@@ -133,7 +143,7 @@ pub async fn fetch_npm_info(source: String) -> Result<NpmInfo, Box<dyn Error>> {
 }
 
 pub async fn fetch_version_list() -> Result<Vec<String>, Box<dyn Error>> {
-    let url = "https://ddragon.leagueoflegends.com/api/versions.json";
+    let url = format!("{cdn}/api/versions.json", cdn = CDN_DDRAGON);
     match reqwest::get(url).await {
         Ok(resp) => match resp.json::<Vec<String>>().await {
             Ok(json) => Ok(json),
@@ -176,16 +186,17 @@ pub struct Image {
     pub full: String,
     pub sprite: String,
     pub group: String,
-    pub x: i64,
-    pub y: i64,
-    pub w: i64,
-    pub h: i64,
+    pub x: u32,
+    pub y: u32,
+    pub w: u32,
+    pub h: u32,
 }
 
 pub async fn fetch_champ_list(version: String) -> Result<ChampListResp, Box<dyn Error>> {
     let url = format!(
-        "http://ddragon.leagueoflegends.com/cdn/{}/data/en_US/champion.json",
-        version
+        "{cdn}/cdn/{version}/data/en_US/champion.json",
+        cdn = CDN_DDRAGON,
+        version = &version
     );
     match reqwest::get(url).await {
         Ok(resp) => match resp.json::<ChampListResp>().await {
