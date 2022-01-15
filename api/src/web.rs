@@ -1,7 +1,8 @@
-use std::{collections::HashMap, error::Error};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use anyhow::Result;
 
 pub const CDN_JSDELIVR: &str = "https://cdn.jsdelivr.net";
 pub const NPM_MIRROR: &str = "https://registry.npmmirror.com";
@@ -16,18 +17,14 @@ pub struct Source {
     pub is_urf: Option<bool>,
 }
 
-pub async fn fetch_source_list() -> Result<Vec<Source>, Box<dyn Error>> {
+pub async fn fetch_source_list() -> Result<Vec<Source>> {
     let url = format!(
         "{cdn}/gh/champ-r/source-list/index.json",
         cdn = CDN_JSDELIVR
     );
-    match reqwest::get(url).await {
-        Ok(resp) => match resp.json::<Vec<Source>>().await {
-            Ok(json) => Ok(json),
-            Err(e) => Result::Err(Box::new(e)),
-        },
-        Err(e) => Result::Err(Box::new(e)),
-    }
+    let resp = reqwest::get(url).await?;
+    let data = resp.json::<Vec<Source>>().await?;
+    Ok(data)
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -96,7 +93,7 @@ pub async fn fetch_champ_detail(
     source: String,
     version: String,
     champ_name: String,
-) -> Result<Vec<ChampData>, Box<dyn Error>> {
+) -> Result<Vec<ChampData>> {
     let url = format!(
         "{cdn}/{source}@{version}/{champ_name}.json",
         cdn = CDN_JSDELIVR,
@@ -104,13 +101,9 @@ pub async fn fetch_champ_detail(
         version = &version,
         champ_name = &champ_name
     );
-    match reqwest::get(url).await {
-        Ok(resp) => match resp.json::<Vec<ChampData>>().await {
-            Ok(json) => Ok(json),
-            Err(e) => Result::Err(Box::new(e)),
-        },
-        Err(e) => Result::Err(Box::new(e)),
-    }
+    let resp = reqwest::get(url).await?;
+    let data = resp.json::<Vec<ChampData>>().await?;
+    Ok(data)
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -131,26 +124,18 @@ pub struct DistTags {
     pub latest: String,
 }
 
-pub async fn fetch_npm_info(source: String) -> Result<NpmInfo, Box<dyn Error>> {
+pub async fn fetch_npm_info(source: String) -> Result<NpmInfo> {
     let url = format!("{cdn}/{source}/latest", cdn = NPM_MIRROR, source = &source);
-    match reqwest::get(url).await {
-        Ok(resp) => match resp.json::<NpmInfo>().await {
-            Ok(json) => Ok(json),
-            Err(e) => Result::Err(Box::new(e)),
-        },
-        Err(e) => Result::Err(Box::new(e)),
-    }
+    let resp = reqwest::get(url).await?;
+    let data = resp.json::<NpmInfo>().await?;
+    Ok(data)
 }
 
-pub async fn fetch_version_list() -> Result<Vec<String>, Box<dyn Error>> {
+pub async fn fetch_version_list() -> Result<Vec<String>> {
     let url = format!("{cdn}/api/versions.json", cdn = CDN_DDRAGON);
-    match reqwest::get(url).await {
-        Ok(resp) => match resp.json::<Vec<String>>().await {
-            Ok(json) => Ok(json),
-            Err(e) => Result::Err(Box::new(e)),
-        },
-        Err(e) => Result::Err(Box::new(e)),
-    }
+    let resp = reqwest::get(url).await?;
+    let data = resp.json::<Vec<String>>().await?;
+    Ok(data)
 }
 
 #[serde_as]
@@ -192,17 +177,13 @@ pub struct Image {
     pub h: u32,
 }
 
-pub async fn fetch_champ_list(version: String) -> Result<ChampListResp, Box<dyn Error>> {
+pub async fn fetch_champ_list(version: String) -> Result<ChampListResp> {
     let url = format!(
         "{cdn}/cdn/{version}/data/en_US/champion.json",
         cdn = CDN_DDRAGON,
         version = &version
     );
-    match reqwest::get(url).await {
-        Ok(resp) => match resp.json::<ChampListResp>().await {
-            Ok(json) => Ok(json),
-            Err(e) => Result::Err(Box::new(e)),
-        },
-        Err(e) => Result::Err(Box::new(e)),
-    }
+    let resp = reqwest::get(url).await?;
+    let data = resp.json::<ChampListResp>().await?;
+    Ok(data)
 }

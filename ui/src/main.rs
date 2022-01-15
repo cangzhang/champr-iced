@@ -146,11 +146,3 @@ impl Sandbox for SourceList {
 struct Variant {
     scrollable: scrollable::State,
 }
-
-impl Variant {
-    pub fn new() -> Self {
-        Self {
-            scrollable: scrollable::State::new(),
-        }
-    }
-}
