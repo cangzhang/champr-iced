@@ -1,6 +1,8 @@
 use anyhow::Result;
 
 use api::web;
+use futures::future::join_all;
+use tokio::task::JoinHandle;
 
 use crate::builds::save_build;
 
@@ -26,32 +28,48 @@ pub async fn apply_builds(source: String) -> Result<()> {
     }
 
     let champ_list = web::fetch_champ_list(latest_version.to_string()).await?;
-    let mut not_found = vec![];
+    let mut tasks: Vec<JoinHandle<Result<()>>> = vec![];
 
-    for (champ_name, _champ_info) in champ_list.data.iter() {
-        let data = web::fetch_champ_detail(
-            source.to_string(),
-            "latest".to_string(),
-            champ_name.to_string(),
-        )
-        .await?;
+    for (champ_name, _champ_info) in champ_list.data.into_iter() {
+        let source = source.clone();
+        tasks.push(tokio::spawn(async move {
+            let resp = web::fetch_champ_detail(
+                source.to_string(),
+                "latest".to_string(),
+                champ_name.to_string(),
+            )
+            .await;
 
-        let data = match data {
-            Some(d) => d,
-            None => {
-                not_found.push(champ_name.to_string());
-                vec![]
-            },
-        };
+            let data = match resp {
+                Ok(data) => match data {
+                    Some(data) => data,
+                    _ => vec![],
+                },
+                _ => vec![],
+            };
 
-        for (idx, i) in data.iter().enumerate() {
-            for (iidx, build) in i.item_builds.iter().enumerate() {
-                let p = format!("./.json/{}-{}-{}.json", champ_name, idx, iidx);
-                save_build(p, build).await?;
+            if data.len() == 0 {
+                println!("not found: {}", champ_name);
             }
-        }
+
+            for (idx, i) in data.iter().enumerate() {
+                for (iidx, build) in i.item_builds.iter().enumerate() {
+                    let p = format!("./.json/{}-{}-{}.json", champ_name, idx, iidx);
+                    match save_build(p, build).await {
+                        Ok(_) => {
+                            println!("saved: {}", champ_name);
+                        },
+                        Err(e) => (
+                            println!("save err: {:?}", e)
+                        ),
+                    }
+                }
+            }
+
+            Ok(())
+        }));
     }
 
-    println!("not found: {:?}", not_found);
+    join_all(tasks).await;
     Ok(())
 }
