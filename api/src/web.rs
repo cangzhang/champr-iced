@@ -93,17 +93,19 @@ pub async fn fetch_champ_detail(
     source: String,
     version: String,
     champ_name: String,
-) -> Result<Vec<ChampData>> {
+) -> Result<Option<Vec<ChampData>>> {
     let url = format!(
-        "{cdn}/{source}@{version}/{champ_name}.json",
+        "{cdn}/npm/{source}@{version}/{champ_name}.json",
         cdn = CDN_JSDELIVR,
         source = &source,
         version = &version,
         champ_name = &champ_name
     );
     let resp = reqwest::get(url).await?;
-    let data = resp.json::<Vec<ChampData>>().await?;
-    Ok(data)
+    match resp.json::<Vec<ChampData>>().await {
+        Ok(data) => Ok(Some(data)),
+        Err(_) => Ok(None)
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -131,7 +133,7 @@ pub async fn fetch_npm_info(source: String) -> Result<NpmInfo> {
     Ok(data)
 }
 
-pub async fn fetch_version_list() -> Result<Vec<String>> {
+pub async fn fetch_lol_version_list() -> Result<Vec<String>> {
     let url = format!("{cdn}/api/versions.json", cdn = CDN_DDRAGON);
     let resp = reqwest::get(url).await?;
     let data = resp.json::<Vec<String>>().await?;
