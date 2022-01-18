@@ -10,7 +10,8 @@ pub mod builds;
 
 #[tokio::main]
 pub async fn main() {
-    match apply_builds("@champ-r/op.gg".to_string()).await {
+    println!("starting...");
+    match apply_builds("op.gg".to_string()).await {
         Ok(_) => {
             println!("all set");
         }
@@ -32,9 +33,10 @@ pub async fn apply_builds(source: String) -> Result<()> {
 
     for (champ_name, _champ_info) in champ_list.data.into_iter() {
         let source = source.clone();
+        let npm_name = format!("@champ-r/{}", source);
         tasks.push(tokio::spawn(async move {
             let resp = web::fetch_champ_detail(
-                source.to_string(),
+                npm_name,
                 "latest".to_string(),
                 champ_name.to_string(),
             )
@@ -54,7 +56,7 @@ pub async fn apply_builds(source: String) -> Result<()> {
 
             for (idx, i) in data.iter().enumerate() {
                 for (iidx, build) in i.item_builds.iter().enumerate() {
-                    let p = format!("./.json/{}-{}-{}.json", champ_name, idx, iidx);
+                    let p = format!("./.json/{}-{}-{}-{}.json", source, champ_name, idx, iidx);
                     match save_build(p, build).await {
                         Ok(_) => {
                             println!("saved: {}", champ_name);
