@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use anyhow::Result;
 
 pub const CDN_JSDELIVR: &str = "https://cdn.jsdelivr.net";
 pub const NPM_MIRROR: &str = "https://registry.npmmirror.com";
@@ -102,9 +102,16 @@ pub async fn fetch_champ_detail(
         champ_name = &champ_name
     );
     let resp = reqwest::get(url).await?;
+    if !resp.status().is_success() {
+        println!("[champ detail] request failed, {} {}", source, champ_name);
+    }
+
     match resp.json::<Vec<ChampData>>().await {
         Ok(data) => Ok(Some(data)),
-        Err(_) => Ok(None)
+        Err(e) => {
+            println!("{:?}", e.to_string());
+            Ok(None)
+        }
     }
 }
 
