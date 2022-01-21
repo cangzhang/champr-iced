@@ -9,18 +9,6 @@ pub mod builds;
 
 #[tokio::main]
 pub async fn main() {
-    let sources = vec!["op.gg".to_string(), "op.gg-aram".to_string()];
-    let folder = "./.json".to_string();
-
-    println!("starting...");
-    match apply_builds(sources, folder).await {
-        Ok(_) => {
-            println!("all set");
-        }
-        Err(e) => {
-            println!("{:?}", e);
-        }
-    }
 }
 
 pub async fn apply_builds(sources: Vec<String>, path: String) -> Result<()> {
@@ -86,4 +74,26 @@ pub async fn apply_builds(sources: Vec<String>, path: String) -> Result<()> {
         .collect::<Vec<()>>()
         .await;
     Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn save_build() {
+        let sources = vec!["op.gg".to_string(), "op.gg-aram".to_string()];
+        let folder = "./.json".to_string();
+    
+        println!("starting...");
+        match apply_builds(sources, folder).await {
+            Ok(_) => {
+                println!("all set");
+            }
+            Err(e) => {
+                println!("{:?}", e);
+            }
+        }
+    }
 }
