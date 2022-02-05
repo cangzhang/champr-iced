@@ -1,4 +1,4 @@
-use std::sync::mpsc;
+use std::{fs, sync::mpsc};
 
 use anyhow::Result;
 
@@ -12,7 +12,16 @@ pub mod builds;
 #[tokio::main]
 pub async fn main() {}
 
-pub async fn apply_builds(sources: Vec<String>, path: String) -> Result<()> {
+pub async fn apply_builds(
+    sources: Vec<String>,
+    path: String,
+    keep_old: bool,
+) -> Result<Vec<(bool, String, String)>> {
+    if !keep_old {
+        fs::remove_dir_all(path.clone())?;
+        println!("emptied old dir: {}", path);
+    }
+
     let v = web::fetch_lol_version_list().await?;
     let latest_version = v.first().unwrap();
     if latest_version.chars().count() == 0 {
@@ -55,7 +64,7 @@ pub async fn apply_builds(sources: Vec<String>, path: String) -> Result<()> {
                 for (idx, i) in data.iter().enumerate() {
                     for (iidx, build) in i.item_builds.iter().enumerate() {
                         let p = format!(
-                            "{path}/{source}-{champ_name}-{idx}-{iidx}.json",
+                            "{path}/{champ_name}/{source}-{champ_name}-{idx}-{iidx}.json",
                             path = path,
                             source = source,
                             champ_name = champ_name,
@@ -85,7 +94,7 @@ pub async fn apply_builds(sources: Vec<String>, path: String) -> Result<()> {
         .await;
 
     drop(tx);
-    
+
     let mut results: Vec<(bool, String, String)> = vec![];
     for r in rx {
         println!("{:?}", r);
@@ -93,7 +102,7 @@ pub async fn apply_builds(sources: Vec<String>, path: String) -> Result<()> {
     }
     println!("all {}", results.len());
 
-    Ok(())
+    Ok(results)
 }
 
 #[cfg(test)]
@@ -102,11 +111,16 @@ mod tests {
 
     #[tokio::test]
     async fn save_build() {
-        let sources = vec!["op.gg".to_string(), "op.gg-aram".to_string()];
+        let sources = vec!["op.gg-aram".to_string()];
         let folder = "../.json".to_string();
+        let keep_old = false;
 
-        println!("starting...");
-        match apply_builds(sources, folder).await {
+        println!(
+            "start: save builds to local, sources: {:?}, keep old items: {}",
+            sources, keep_old
+        );
+
+        match apply_builds(sources, folder, keep_old).await {
             Ok(_) => {
                 println!("all set");
             }

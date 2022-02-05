@@ -101,6 +101,8 @@ pub async fn fetch_champ_detail(
         version = &version,
         champ_name = &champ_name
     );
+    println!("fetching champ detail: [{}]", url);
+    
     let resp = reqwest::get(url).await?;
     if !resp.status().is_success() {
         println!("[champ detail] request failed, {} {}", source, champ_name);
