@@ -38,8 +38,8 @@ pub struct ChampData {
     pub alias: String,
     pub name: String,
     pub position: String,
-    pub skills: Vec<String>,
-    pub spells: Vec<String>,
+    pub skills: Option<Vec<String>>,
+    pub spells: Option<Vec<String>>,
     pub item_builds: Vec<ItemBuild>,
     pub runes: Vec<Rune>,
 }
@@ -102,8 +102,8 @@ pub async fn fetch_champ_detail(
         champ_name = &champ_name
     );
     println!("fetching champ detail: [{}]", url);
-    
-    let resp = reqwest::get(url).await?;
+
+    let resp = reqwest::get(&url).await?;
     if !resp.status().is_success() {
         println!("[champ detail] request failed, {} {}", source, champ_name);
     }
@@ -111,7 +111,7 @@ pub async fn fetch_champ_detail(
     match resp.json::<Vec<ChampData>>().await {
         Ok(data) => Ok(Some(data)),
         Err(e) => {
-            println!("{:?}", e.to_string());
+            println!("[{}], {:?}", url, e.to_string());
             Ok(None)
         }
     }

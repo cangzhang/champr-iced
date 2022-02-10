@@ -1,4 +1,4 @@
-use std::{fs, sync::mpsc};
+use std::{fs, path::Path, sync::mpsc};
 
 use anyhow::Result;
 
@@ -17,7 +17,8 @@ pub async fn apply_builds(
     path: String,
     keep_old: bool,
 ) -> Result<Vec<(bool, String, String)>> {
-    if !keep_old {
+    let path_exists = Path::new(&path).exists();
+    if path_exists && !keep_old {
         fs::remove_dir_all(path.clone())?;
         println!("emptied old dir: {}", path);
     }
@@ -73,7 +74,7 @@ pub async fn apply_builds(
                         );
                         match save_build(p, build).await {
                             Ok(_) => {
-                                println!("finished: [{}] {}", source, champ_name);
+                                // println!("finished: [{}] {}", source, champ_name);
                                 tx.send((true, source.clone(), champ_name.clone())).unwrap();
                             }
                             Err(e) => {
@@ -111,7 +112,12 @@ mod tests {
 
     #[tokio::test]
     async fn save_build() {
-        let sources = vec!["op.gg-aram".to_string()];
+        let sources = vec![
+            "op.gg-aram".to_string(),
+            "op.gg".to_string(),
+            "lolalytics".to_string(),
+            "lolalytics-aram".to_string(),
+        ];
         let folder = "../.json".to_string();
         let keep_old = false;
 
