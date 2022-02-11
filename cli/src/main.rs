@@ -98,7 +98,9 @@ pub async fn apply_builds(
 
     let mut results: Vec<(bool, String, String)> = vec![];
     for r in rx {
-        println!("{:?}", r);
+        if r.0 == false {
+            println!("{:?}", r);
+        }
         results.push(r);
     }
     println!("all {}", results.len());

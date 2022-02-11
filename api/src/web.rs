@@ -65,7 +65,7 @@ pub struct ItemBuild {
 pub struct Block {
     #[serde(rename = "type")]
     pub type_field: String,
-    pub items: Vec<Item>,
+    pub items: Option<Vec<Item>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
