@@ -8,6 +8,7 @@ use futures::StreamExt;
 use crate::builds::save_build;
 
 pub mod builds;
+pub mod cmd;
 
 #[tokio::main]
 pub async fn main() {}
@@ -136,5 +137,12 @@ mod tests {
                 println!("{:?}", e);
             }
         }
+    }
+
+    #[tokio::test]
+    async fn get_auth_from_cmd() {
+        match cmd::get_lcu_auth().await {
+            _ => {}
+        };
     }
 }
