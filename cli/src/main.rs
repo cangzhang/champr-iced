@@ -8,7 +8,7 @@ use futures::StreamExt;
 use crate::builds::save_build;
 
 pub mod builds;
-pub mod cmd;
+pub mod lcu;
 
 #[tokio::main]
 pub async fn main() {}
@@ -111,6 +111,8 @@ pub async fn apply_builds(
 
 #[cfg(test)]
 mod tests {
+    use crate::lcu::LCU;
+
     use super::*;
 
     #[tokio::test]
@@ -140,8 +142,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_auth_from_cmd() {
-        match cmd::get_lcu_auth().await {
+    async fn get_auth() {
+        let client = LCU::new();
+        match client.parse_auth().await {
             _ => {}
         };
     }
