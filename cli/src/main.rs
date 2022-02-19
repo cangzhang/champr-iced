@@ -7,6 +7,9 @@ use futures::StreamExt;
 
 use crate::builds::save_build;
 
+#[macro_use]
+extern crate lazy_static;
+
 pub mod builds;
 pub mod lcu;
 
@@ -143,7 +146,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_auth() {
-        let client = LCU::new();
+        let mut client = LCU::new();
         match client.parse_auth().await {
             _ => {}
         };

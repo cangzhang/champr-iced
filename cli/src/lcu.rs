@@ -1,16 +1,19 @@
 use anyhow::Result;
+use regex::Regex;
 use std::{env, fs, process::Command, time::Duration};
-use tokio::{task, time};
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-pub struct CmdOutput {
-    #[serde(rename = "CommandLine")]
-    command_line: Option<String>,
-}
+use tokio::{task, time, sync::mpsc};
+// use serde::{Deserialize, Serialize};
 
 pub struct LCU {
     auth_url: String,
+}
+
+const APP_PORT_KEY: &str = "--app-port=";
+const AUTH_TOKEN_KEY: &str = "--remoting-auth-token=";
+const CONTROL_CHAR: &str = "\\";
+
+pub fn make_auth_url(token: String, port: String) -> String {
+    format!("riot:{token}@127.0.0.1:{port}")
 }
 
 impl LCU {
@@ -20,13 +23,20 @@ impl LCU {
         }
     }
 
-    pub async fn parse_auth(&self) -> Result<()> {
-        let forever = task::spawn(async {
+    pub async fn parse_auth(&mut self) -> Result<()> {
+        lazy_static! {
+            static ref PORT_REGEXP: Regex = Regex::new(r"--app-port=\d+").unwrap();
+            static ref TOKEN_REGEXP: Regex = Regex::new(r"--remoting-auth-token=\S+\\").unwrap();
+        }
+
+        let (tx, mut rx) = mpsc::channel(100);
+        let forever = task::spawn(async move {
             let mut interval = time::interval(Duration::from_secs(5));
 
             loop {
                 interval.tick().await;
-
+                
+                let tx = tx.clone();
                 let tmp = env::temp_dir();
                 let output_file = tmp.join("lcu_cmd_line.json");
                 let cmd_str = format!(
@@ -40,17 +50,30 @@ impl LCU {
                     .expect("failed to run powershell");
 
                 let file_content = fs::read_to_string(&output_file).unwrap();
-                println!("{}", file_content);
-                let cmd_line: CmdOutput = serde_json::from_str(&file_content).unwrap();
-                let output = cmd_line.command_line.unwrap_or(String::new());
-                if output.chars().count() > 0 {
-                    let port: Vec<&str> = output.split("--app-port=").collect();
-                    println!("{:?}", port);
-                }
+
+                let port_match = PORT_REGEXP.find(&file_content).unwrap();
+                let port = port_match.as_str().replace(APP_PORT_KEY, "");
+                let token_match = TOKEN_REGEXP.find(&file_content).unwrap();
+                let token = token_match
+                    .as_str()
+                    .replace(AUTH_TOKEN_KEY, "")
+                    .replace(CONTROL_CHAR, "");
+
+                let auth_url = make_auth_url(port, token);
+                print!("auth url: {}", auth_url);
+                if let Err(_) = tx.send(auth_url).await {
+                    println!("tx failed");
+                };
             }
         });
 
         forever.await?;
+        
+        while let Some(r) = rx.recv().await {
+            println!("lcu auth url: {}", r);
+            self.auth_url = r.to_owned();
+        }
+
         Ok(())
     }
 }
