@@ -8,7 +8,7 @@ pub const CDN_JSDELIVR: &str = "https://cdn.jsdelivr.net";
 pub const NPM_MIRROR: &str = "https://registry.npmmirror.com";
 pub const CDN_DDRAGON: &str = "https://ddragon.leagueoflegends.com";
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Source {
     pub label: String,

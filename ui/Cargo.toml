@@ -7,3 +7,5 @@ edition = "2018"
 
 [dependencies]
 iced = "0.3.0"
+api = { path = "../api" }
+anyhow = "1.0"

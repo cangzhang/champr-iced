@@ -1,6 +1,7 @@
+use api::web;
 use iced::{
-    button, scrollable, text_input, Button, Checkbox, Column, Container, Length, Row, Sandbox,
-    Scrollable, Settings, Text, TextInput,
+    button, executor, scrollable, text_input, Application, Button, Checkbox, Clipboard, Column,
+    Command, Container, Length, Row, Scrollable, Settings, Text, TextInput,
 };
 
 fn main() -> Result<(), iced::Error> {
@@ -22,15 +23,14 @@ struct SourceList {
     input: text_input::State,
     input_value: String,
     btn: button::State,
-
     items: Vec<SourceItem>,
-    selected: Vec<String>,    
+    selected: Vec<String>,
 }
 
 impl SourceList {
     pub fn new() -> Self {
         let mut items = vec![];
-        for i in 1..20 {
+        for i in 1..3 {
             let item = SourceItem {
                 label: format!("Source {}", i),
                 value: format!("source-{}", i),
@@ -43,6 +43,10 @@ impl SourceList {
             ..Self::default()
         }
     }
+
+    pub fn update_list(&mut self, items: Vec<SourceItem>) {
+        self.items = items;
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -50,35 +54,66 @@ enum Message {
     ToggleSource(bool, String),
     OnInput(String),
     OnClick,
+    OnFetchList(Vec<web::Source>),
+    OnReqFailed,
 }
 
-impl Sandbox for SourceList {
-    type Message = Message;
+fn result_handler(ret: anyhow::Result<Vec<web::Source>>) -> Message {
+    match ret {
+        Ok(list) => Message::OnFetchList(list),
+        Err(_err) => Message::OnReqFailed,
+    }
+}
 
-    fn new() -> Self {
-        SourceList::new()
+impl Application for SourceList {
+    type Message = Message;
+    type Executor = executor::Default;
+    type Flags = ();
+
+    fn new(_flags: ()) -> (Self, Command<Message>) {
+        (
+            SourceList::new(),
+            Command::perform(web::fetch_source_list(), result_handler),
+        )
     }
 
     fn title(&self) -> String {
         String::from("ChampR - rust")
     }
 
-    fn update(&mut self, message: Self::Message) {
+    fn update(&mut self, message: Self::Message, _c: &mut Clipboard) -> Command<Message> {
         match message {
             Message::ToggleSource(checked, s) => {
                 if checked {
                     self.selected.push(s);
                 } else {
-                    let idx = self.selected.iter().position(|i| i.to_string() == s).unwrap();
+                    let idx = self
+                        .selected
+                        .iter()
+                        .position(|i| i.to_string() == s)
+                        .unwrap();
                     self.selected.remove(idx);
                 }
                 println!("{:?}", self.selected);
+                Command::none()
             }
             Message::OnInput(s) => {
                 self.input_value = s;
+                Command::none()
             }
-            Message::OnClick => {
+            Message::OnClick => Command::none(),
+            Message::OnFetchList(list) => {
+                let mut items: Vec<SourceItem> = vec![];
+                for i in list {
+                    items.push(SourceItem {
+                        label: i.label,
+                        value: i.value,
+                    });
+                }
+                self.update_list(items);
+                Command::none()
             }
+            Message::OnReqFailed => Command::none(),
         }
     }
 
@@ -130,8 +165,7 @@ impl Sandbox for SourceList {
         col = col.push(scrollable);
         col = col.push(
             Container::new(
-                Button::new(&mut self.btn, Text::new("Click me"))
-                    .on_press(Message::OnClick),
+                Button::new(&mut self.btn, Text::new("Click me")).on_press(Message::OnClick),
             )
             .padding(10)
             .center_x()
