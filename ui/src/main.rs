@@ -1,7 +1,7 @@
 use api::web;
 use iced::{
     button, executor, scrollable, text_input, Application, Button, Checkbox, Clipboard, Column,
-    Command, Container, Length, Row, Scrollable, Settings, Text, TextInput,
+    Command, Container, Length, Row, Scrollable, Settings, Text, TextInput, Element,
 };
 
 fn main() -> Result<(), iced::Error> {
@@ -117,7 +117,7 @@ impl Application for SourceList {
         }
     }
 
-    fn view(&mut self) -> iced::Element<'_, Self::Message> {
+    fn view(&mut self) -> Element<Message> {
         let search_label = Text::new("Search:");
         let search_input = TextInput::new(
             &mut self.input,
