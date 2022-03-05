@@ -1,20 +1,24 @@
-use std::{fs, path::Path, sync::mpsc};
+use std::{
+    fs::{self, File},
+    io::Write,
+    path::Path, sync::mpsc,
+};
 
 use anyhow::Result;
-
-use api::web;
 use futures::StreamExt;
 
-use crate::builds::save_build;
+use crate::web;
 
-#[macro_use]
-extern crate lazy_static;
+pub async fn save_build(path: String, data: &web::ItemBuild) -> Result<()> {
+    let path = Path::new(&path);
+    let prefix = path.parent().unwrap();
+    fs::create_dir_all(prefix).unwrap();
 
-pub mod builds;
-pub mod lcu;
-
-#[tokio::main]
-pub async fn main() {}
+    let mut f = File::create(&path)?;
+    let buf = serde_json::to_string(&data)?;
+    f.write_all(&buf[..].as_bytes())?;
+    Ok(())
+}
 
 pub async fn apply_builds(
     sources: Vec<String>,

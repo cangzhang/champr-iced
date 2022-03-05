@@ -1,8 +1,14 @@
-use api::web;
 use iced::{
     button, executor, scrollable, text_input, Application, Button, Checkbox, Clipboard, Column,
     Command, Container, Length, Row, Scrollable, Settings, Text, TextInput, Element,
 };
+
+pub mod web;
+pub mod builds;
+pub mod lcu;
+
+#[macro_use]
+extern crate lazy_static;
 
 fn main() -> Result<(), iced::Error> {
     let mut settings = Settings::default();
