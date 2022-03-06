@@ -1,11 +1,11 @@
 use iced::{
     button, executor, scrollable, text_input, Application, Button, Checkbox, Clipboard, Column,
-    Command, Container, Length, Row, Scrollable, Settings, Text, TextInput, Element,
+    Command, Container, Element, Length, Row, Scrollable, Settings, Text, TextInput,
 };
 
-pub mod web;
 pub mod builds;
 pub mod lcu;
+pub mod web;
 
 #[macro_use]
 extern crate lazy_static;
@@ -26,11 +26,18 @@ struct SourceItem {
 #[derive(Default)]
 struct SourceList {
     variants: Variant,
-    input: text_input::State,
-    input_value: String,
+
+    search_input: text_input::State,
+    search: String,
+
     btn: button::State,
     items: Vec<SourceItem>,
     selected: Vec<String>,
+
+    lol_dir_input: text_input::State,
+    lol_dir: String,
+
+    keep_old: bool,
 }
 
 impl SourceList {
@@ -62,12 +69,23 @@ enum Message {
     OnClick,
     OnFetchList(Vec<web::Source>),
     OnReqFailed,
+    OnUpdateDir(String),
+    OnApplyBuildDone,
+    OnApplyBuildFailed,
+    ToggleKeepOld(bool),
 }
 
 fn result_handler(ret: anyhow::Result<Vec<web::Source>>) -> Message {
     match ret {
         Ok(list) => Message::OnFetchList(list),
         Err(_err) => Message::OnReqFailed,
+    }
+}
+
+fn apply_result_handler(ret: anyhow::Result<Vec<(bool, String, String)>>) -> Message {
+    match ret {
+        Ok(_) => Message::OnApplyBuildDone,
+        Err(e) => Message::OnApplyBuildFailed,
     }
 }
 
@@ -104,10 +122,21 @@ impl Application for SourceList {
                 Command::none()
             }
             Message::OnInput(s) => {
-                self.input_value = s;
+                self.search = s;
                 Command::none()
             }
-            Message::OnClick => Command::none(),
+            Message::OnClick => {
+                if self.selected.len() == 0 || self.lol_dir.chars().count() == 0 {
+                    return Command::none();
+                }
+
+                let selected = self.selected.clone();
+                let lol_dir = self.lol_dir.to_owned();
+                Command::perform(
+                    builds::apply_builds(selected, lol_dir, self.keep_old),
+                    apply_result_handler,
+                )
+            }
             Message::OnFetchList(list) => {
                 let mut items: Vec<SourceItem> = vec![];
                 for i in list {
@@ -119,22 +148,31 @@ impl Application for SourceList {
                 self.update_list(items);
                 Command::none()
             }
+            Message::OnUpdateDir(dir) => {
+                self.lol_dir = dir;
+                Command::none()
+            }
             Message::OnReqFailed => Command::none(),
+            Message::OnApplyBuildDone => Command::none(),
+            Message::OnApplyBuildFailed => Command::none(),
+            Message::ToggleKeepOld(checked) => {
+                self.keep_old = checked;
+                Command::none()
+            }
         }
     }
 
     fn view(&mut self) -> Element<Message> {
-        let search_label = Text::new("Search:");
+        let search_label = Text::new("Filter:");
         let search_input = TextInput::new(
-            &mut self.input,
-            "type something",
-            &self.input_value,
+            &mut self.search_input,
+            "type to search",
+            &self.search,
             Message::OnInput,
         )
         .padding(4)
         .width(Length::FillPortion(5));
-
-        let row = Row::new()
+        let filter_row = Row::new()
             .spacing(10)
             .padding(10)
             .align_items(iced::Align::Center)
@@ -142,9 +180,25 @@ impl Application for SourceList {
             .push(search_input)
             .height(Length::FillPortion(1));
 
+        let dir_input_label = Text::new("LoL Dir: ");
+        let dir_input = TextInput::new(
+            &mut self.lol_dir_input,
+            "input lol dir",
+            &self.lol_dir,
+            Message::OnUpdateDir,
+        );
+        let dir_row = Row::new()
+            .spacing(10)
+            .padding(10)
+            .align_items(iced::Align::Center)
+            .push(dir_input_label)
+            .push(dir_input)
+            .height(Length::Fill);
+
         let mut col = Column::new()
             .spacing(10)
-            .push(row)
+            .push(filter_row)
+            .push(dir_row)
             .width(Length::Fill)
             .height(Length::Fill);
 
@@ -158,7 +212,7 @@ impl Application for SourceList {
             let label = i.label.to_string();
             let value = i.value.to_string();
             let checked = self.selected.contains(&value);
-            let visible = label.contains(&self.input_value);
+            let visible = label.contains(&self.search);
 
             if visible {
                 let cb = Checkbox::new(checked, label, move |checked| {
@@ -169,6 +223,13 @@ impl Application for SourceList {
         }
 
         col = col.push(scrollable);
+
+        col = col.push(Container::new(Checkbox::new(
+            self.keep_old,
+            "Keep old builds",
+            move |checked| Message::ToggleKeepOld(checked),
+        )));
+
         col = col.push(
             Container::new(
                 Button::new(&mut self.btn, Text::new("Click me")).on_press(Message::OnClick),
@@ -178,6 +239,7 @@ impl Application for SourceList {
             .center_y()
             .height(Length::FillPortion(3)),
         );
+
         col.into()
     }
 }
