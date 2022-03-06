@@ -11,6 +11,8 @@ pub mod web;
 extern crate lazy_static;
 
 fn main() -> Result<(), iced::Error> {
+    tracing_subscriber::fmt::init();
+    
     let mut settings = Settings::default();
     settings.window.size = (320, 540);
     settings.window.resizable = false;
