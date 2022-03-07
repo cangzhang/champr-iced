@@ -12,11 +12,11 @@ extern crate lazy_static;
 
 fn main() -> Result<(), iced::Error> {
     tracing_subscriber::fmt::init();
-    
+
     let mut settings = Settings::default();
     settings.window.size = (320, 540);
     settings.window.resizable = false;
-    SourceList::run(settings)
+    App::run(settings)
 }
 
 #[derive(Clone)]
@@ -26,23 +26,21 @@ struct SourceItem {
 }
 
 #[derive(Default)]
-struct SourceList {
+struct App {
     variants: Variant,
-
-    search_input: text_input::State,
-    search: String,
-
-    btn: button::State,
     items: Vec<SourceItem>,
     selected: Vec<String>,
 
+    search_input: text_input::State,
+    search: String,
+    btn: button::State,
     lol_dir_input: text_input::State,
     lol_dir: String,
-
     keep_old: bool,
+    dir_select_btn: button::State,
 }
 
-impl SourceList {
+impl App {
     pub fn new() -> Self {
         let mut items = vec![];
         for i in 1..3 {
@@ -75,6 +73,7 @@ enum Message {
     OnApplyBuildDone,
     OnApplyBuildFailed,
     ToggleKeepOld(bool),
+    OnSelectDir,
 }
 
 fn result_handler(ret: anyhow::Result<Vec<web::Source>>) -> Message {
@@ -87,18 +86,18 @@ fn result_handler(ret: anyhow::Result<Vec<web::Source>>) -> Message {
 fn apply_result_handler(ret: anyhow::Result<Vec<(bool, String, String)>>) -> Message {
     match ret {
         Ok(_) => Message::OnApplyBuildDone,
-        Err(e) => Message::OnApplyBuildFailed,
+        Err(_e) => Message::OnApplyBuildFailed,
     }
 }
 
-impl Application for SourceList {
+impl Application for App {
     type Message = Message;
     type Executor = executor::Default;
     type Flags = ();
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
         (
-            SourceList::new(),
+            App::new(),
             Command::perform(web::fetch_source_list(), result_handler),
         )
     }
@@ -161,6 +160,20 @@ impl Application for SourceList {
                 self.keep_old = checked;
                 Command::none()
             }
+            Message::OnSelectDir => {
+                let mut folder: String = String::from("");
+                match tinyfiledialogs::select_folder_dialog("Select LoL folder", "") {
+                    Some(result) => {
+                        folder = result;
+                    },
+                    _ => {},
+                }
+                println!("selected folder: {}", folder);
+                if folder.chars().count() > 0 {
+                    self.lol_dir = folder;
+                }
+                Command::none()
+            }
         }
     }
 
@@ -189,12 +202,15 @@ impl Application for SourceList {
             &self.lol_dir,
             Message::OnUpdateDir,
         );
+        let dir_select_btn = Button::new(&mut self.dir_select_btn, Text::new("select folder"))
+            .on_press(Message::OnSelectDir);
         let dir_row = Row::new()
             .spacing(10)
             .padding(10)
             .align_items(iced::Align::Center)
             .push(dir_input_label)
             .push(dir_input)
+            .push(dir_select_btn)
             .height(Length::Fill);
 
         let mut col = Column::new()
