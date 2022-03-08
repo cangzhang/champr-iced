@@ -34,7 +34,6 @@ struct App {
     search_input: text_input::State,
     search: String,
     btn: button::State,
-    lol_dir_input: text_input::State,
     lol_dir: String,
     keep_old: bool,
     dir_select_btn: button::State,
@@ -69,7 +68,6 @@ enum Message {
     OnClick,
     OnFetchList(Vec<web::Source>),
     OnReqFailed,
-    OnUpdateDir(String),
     OnApplyBuildDone,
     OnApplyBuildFailed,
     ToggleKeepOld(bool),
@@ -103,7 +101,7 @@ impl Application for App {
     }
 
     fn title(&self) -> String {
-        String::from("ChampR - rust")
+        String::from("ChampR [rust]")
     }
 
     fn update(&mut self, message: Self::Message, _c: &mut Clipboard) -> Command<Message> {
@@ -149,10 +147,6 @@ impl Application for App {
                 self.update_list(items);
                 Command::none()
             }
-            Message::OnUpdateDir(dir) => {
-                self.lol_dir = dir;
-                Command::none()
-            }
             Message::OnReqFailed => Command::none(),
             Message::OnApplyBuildDone => Command::none(),
             Message::OnApplyBuildFailed => Command::none(),
@@ -195,28 +189,26 @@ impl Application for App {
             .push(search_input)
             .height(Length::FillPortion(1));
 
-        let dir_input_label = Text::new("LoL Dir: ");
-        let dir_input = TextInput::new(
-            &mut self.lol_dir_input,
-            "input lol dir",
-            &self.lol_dir,
-            Message::OnUpdateDir,
-        );
-        let dir_select_btn = Button::new(&mut self.dir_select_btn, Text::new("select folder"))
+        let dir_text = if self.lol_dir.chars().count() > 0  {
+            &self.lol_dir
+        } else {
+            "Please specify LoL dir."
+        };
+        let dir_input_label = Text::new(dir_text);
+        let dir_select_btn = Button::new(&mut self.dir_select_btn, Text::new("Select folder"))
             .on_press(Message::OnSelectDir);
         let dir_row = Row::new()
             .spacing(10)
             .padding(10)
             .align_items(iced::Align::Center)
-            .push(dir_input_label)
-            .push(dir_input)
             .push(dir_select_btn)
+            .push(dir_input_label)
             .height(Length::Fill);
 
         let mut col = Column::new()
             .spacing(10)
-            .push(filter_row)
             .push(dir_row)
+            .push(filter_row)
             .width(Length::Fill)
             .height(Length::Fill);
 
