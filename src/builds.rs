@@ -118,8 +118,6 @@ pub async fn apply_builds(
 
 #[cfg(test)]
 mod tests {
-    use crate::lcu::LCU;
-
     use super::*;
 
     #[tokio::test]
@@ -146,13 +144,5 @@ mod tests {
                 println!("{:?}", e);
             }
         }
-    }
-
-    #[tokio::test]
-    async fn get_auth() {
-        let mut client = LCU::new();
-        match client.parse_auth().await {
-            _ => {}
-        };
     }
 }

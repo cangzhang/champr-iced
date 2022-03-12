@@ -1,7 +1,8 @@
 use iced::{
     button, executor, scrollable, text_input, Application, Button, Checkbox, Clipboard, Column,
-    Command, Container, Element, Length, Row, Scrollable, Settings, Text, TextInput,
+    Command, Container, Element, Length, Row, Scrollable, Settings, Text, TextInput, Subscription, time,
 };
+// use lcu::LCU;
 
 pub mod builds;
 pub mod lcu;
@@ -37,6 +38,8 @@ struct App {
     lol_dir: String,
     keep_old: bool,
     dir_select_btn: button::State,
+
+    lcu_auth_url: String,
 }
 
 impl App {
@@ -72,6 +75,8 @@ enum Message {
     OnApplyBuildFailed,
     ToggleKeepOld(bool),
     OnSelectDir,
+    Tick,
+    OnGetLcuAuth(String),
 }
 
 fn result_handler(ret: anyhow::Result<Vec<web::Source>>) -> Message {
@@ -85,6 +90,13 @@ fn apply_result_handler(ret: anyhow::Result<Vec<(bool, String, String)>>) -> Mes
     match ret {
         Ok(_) => Message::OnApplyBuildDone,
         Err(_e) => Message::OnApplyBuildFailed,
+    }
+}
+
+fn lcu_auth_handler(ret: anyhow::Result<String>) -> Message {
+    match ret {
+        Ok(s) => Message::OnGetLcuAuth(s),
+        Err(_e) => Message::OnReqFailed,
     }
 }
 
@@ -102,6 +114,11 @@ impl Application for App {
 
     fn title(&self) -> String {
         String::from("ChampR [rust]")
+    }
+
+    fn subscription(&self) -> Subscription<Message> {
+        time::every(std::time::Duration::from_secs(3))
+            .map(|_| Message::Tick)
     }
 
     fn update(&mut self, message: Self::Message, _c: &mut Clipboard) -> Command<Message> {
@@ -165,6 +182,19 @@ impl Application for App {
                 println!("selected folder: {}", folder);
                 if folder.chars().count() > 0 {
                     self.lol_dir = folder;
+                }
+                Command::none()
+            }
+            Message::Tick => {
+                println!("tick");
+                // let mut lcu = lcu::LCU::new();
+                Command::perform(lcu::parse_auth(), lcu_auth_handler)
+            }
+            Message::OnGetLcuAuth(auth) => {
+                println!("lcu auth url: {}", auth);
+                if self.lcu_auth_url != auth {
+                    println!("update lcu auth");
+                    self.lcu_auth_url = auth;
                 }
                 Command::none()
             }
