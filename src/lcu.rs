@@ -91,21 +91,29 @@ pub async fn parse_auth() -> Result<String> {
             .output()
             .expect("failed to run powershell");
 
-        let file_content = fs::read_to_string(&output_file_path).unwrap();
-        let port_match = PORT_REGEXP.find(&file_content).unwrap();
-        let port = port_match.as_str().replace(APP_PORT_KEY, "");
-        let token_match = TOKEN_REGEXP.find(&file_content).unwrap();
-        let token = token_match
-            .as_str()
-            .replace(AUTH_TOKEN_KEY, "")
-            .replace(CONTROL_CHAR, "");
+        let file_content = fs::read_to_string(&output_file_path).unwrap_or_default();
+        match PORT_REGEXP.is_match(&file_content) {
+            false => (),
+            true => {
+                let port_match = PORT_REGEXP.find(&file_content).unwrap();
+                let port = port_match.as_str().replace(APP_PORT_KEY, "");
+                let token_match = TOKEN_REGEXP.find(&file_content).unwrap();
+                let token = token_match
+                    .as_str()
+                    .replace(AUTH_TOKEN_KEY, "")
+                    .replace(CONTROL_CHAR, "");
 
-        let auth_url = make_auth_url(port, token);
-        tx.send(auth_url).unwrap();
+                let auth_url = make_auth_url(port, token);
+                tx.send(auth_url).unwrap();
+            }
+        }
     });
     job.await?;
 
-    let auth_url = rx.recv().unwrap();
+    let auth_url = match rx.recv() {
+        Ok(url) => url,
+        Err(_) => String::from(""),
+    };
     Ok(auth_url.clone())
 }
 

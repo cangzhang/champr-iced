@@ -1,8 +1,9 @@
+// use font_kit::source::SystemSource;
 use iced::{
-    button, executor, scrollable, text_input, Application, Button, Checkbox, Clipboard, Column,
-    Command, Container, Element, Length, Row, Scrollable, Settings, Text, TextInput, Subscription, time,
+    button, executor, scrollable, text_input, time, Application, Button, Checkbox, Clipboard,
+    Column, Command, Container, Element, Length, Row, Scrollable, Settings, Subscription, Text,
+    TextInput,
 };
-// use lcu::LCU;
 
 pub mod builds;
 pub mod lcu;
@@ -17,6 +18,7 @@ fn main() -> Result<(), iced::Error> {
     let mut settings = Settings::default();
     settings.window.size = (320, 540);
     settings.window.resizable = false;
+    settings.default_font = Some(include_bytes!("../wqy-microhei.ttc"));
     App::run(settings)
 }
 
@@ -117,8 +119,7 @@ impl Application for App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        time::every(std::time::Duration::from_secs(3))
-            .map(|_| Message::Tick)
+        time::every(std::time::Duration::from_secs(3)).map(|_| Message::Tick)
     }
 
     fn update(&mut self, message: Self::Message, _c: &mut Clipboard) -> Command<Message> {
@@ -173,11 +174,11 @@ impl Application for App {
             }
             Message::OnSelectDir => {
                 let mut folder: String = String::from("");
-                match tinyfiledialogs::select_folder_dialog("Select LoL folder", "") {
+                match tinyfiledialogs::select_folder_dialog("Select LoL folder", &self.lol_dir) {
                     Some(result) => {
                         folder = result;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
                 println!("selected folder: {}", folder);
                 if folder.chars().count() > 0 {
@@ -191,8 +192,7 @@ impl Application for App {
                 Command::perform(lcu::parse_auth(), lcu_auth_handler)
             }
             Message::OnGetLcuAuth(auth) => {
-                println!("lcu auth url: {}", auth);
-                if self.lcu_auth_url != auth {
+                if self.lcu_auth_url != auth && auth.len() > 0 {
                     println!("update lcu auth");
                     self.lcu_auth_url = auth;
                 }
@@ -219,7 +219,7 @@ impl Application for App {
             .push(search_input)
             .height(Length::FillPortion(1));
 
-        let dir_text = if self.lol_dir.chars().count() > 0  {
+        let dir_text = if self.lol_dir.chars().count() > 0 {
             &self.lol_dir
         } else {
             "Please specify LoL dir."
