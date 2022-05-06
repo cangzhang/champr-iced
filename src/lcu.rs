@@ -118,6 +118,7 @@ pub async fn parse_auth() -> Result<String> {
 }
 
 mod tests {
+    #![allow(unused_imports)]
     use crate::lcu;
 
     #[tokio::test]

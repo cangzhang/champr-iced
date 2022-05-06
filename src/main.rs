@@ -189,7 +189,11 @@ impl Application for App {
             Message::Tick => {
                 println!("tick");
                 // let mut lcu = lcu::LCU::new();
-                Command::perform(lcu::parse_auth(), lcu_auth_handler)
+                #[cfg(target_os = "windows")]
+                return Command::perform(lcu::parse_auth(), lcu_auth_handler);
+                
+                #[cfg(not(target_os = "windows"))]
+                return Command::none();
             }
             Message::OnGetLcuAuth(auth) => {
                 if self.lcu_auth_url != auth && auth.len() > 0 {
