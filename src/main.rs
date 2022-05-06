@@ -1,8 +1,9 @@
 // use font_kit::source::SystemSource;
+use iced::alignment::Horizontal;
 use iced::{
-    button, executor, scrollable, text_input, time, Application, Button, Checkbox, Clipboard,
-    Column, Command, Container, Element, Length, Row, Scrollable, Settings, Subscription, Text,
-    TextInput,
+    button, executor, scrollable, text_input, time, Alignment, Application, Button, Checkbox,
+    Color, Column, Command, Container, Element, Length, Row, Scrollable, Settings, Subscription,
+    Text, TextInput,
 };
 
 pub mod builds;
@@ -17,7 +18,7 @@ fn main() -> Result<(), iced::Error> {
 
     let mut settings = Settings::default();
     settings.window.size = (320, 540);
-    settings.window.resizable = false;
+    // settings.window.resizable = false;
     settings.default_font = Some(include_bytes!("../wqy-microhei.ttc"));
     App::run(settings)
 }
@@ -122,7 +123,7 @@ impl Application for App {
         time::every(std::time::Duration::from_secs(3)).map(|_| Message::Tick)
     }
 
-    fn update(&mut self, message: Self::Message, _c: &mut Clipboard) -> Command<Message> {
+    fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
             Message::ToggleSource(checked, s) => {
                 if checked {
@@ -191,7 +192,7 @@ impl Application for App {
                 // let mut lcu = lcu::LCU::new();
                 #[cfg(target_os = "windows")]
                 return Command::perform(lcu::parse_auth(), lcu_auth_handler);
-                
+
                 #[cfg(not(target_os = "windows"))]
                 return Command::none();
             }
@@ -206,6 +207,32 @@ impl Application for App {
     }
 
     fn view(&mut self) -> Element<Message> {
+        let title = Text::new("ChampR")
+            .size(40)
+            .color(Color::from_rgb8(242, 203, 5))
+            .width(Length::Fill)
+            .horizontal_alignment(Horizontal::Center);
+
+        let dir_text = if self.lol_dir.chars().count() > 0 {
+            &self.lol_dir
+        } else {
+            "Please select LoL folder."
+        };
+        let dir_input_label = Text::new(dir_text);
+        let dir_select_btn = Button::new(
+            &mut self.dir_select_btn,
+            Text::new("Select folder").size(16),
+        )
+        .height(Length::Fill)
+        .on_press(Message::OnSelectDir);
+        let dir_row = Row::new()
+            .spacing(10)
+            .padding(10)
+            .align_items(Alignment::Center)
+            .push(dir_select_btn)
+            .push(dir_input_label)
+            .height(Length::Fill);
+
         let search_label = Text::new("Filter:");
         let search_input = TextInput::new(
             &mut self.search_input,
@@ -218,29 +245,14 @@ impl Application for App {
         let filter_row = Row::new()
             .spacing(10)
             .padding(10)
-            .align_items(iced::Align::Center)
+            .align_items(Alignment::Center)
             .push(search_label)
             .push(search_input)
             .height(Length::FillPortion(1));
 
-        let dir_text = if self.lol_dir.chars().count() > 0 {
-            &self.lol_dir
-        } else {
-            "Please specify LoL dir."
-        };
-        let dir_input_label = Text::new(dir_text);
-        let dir_select_btn = Button::new(&mut self.dir_select_btn, Text::new("Select folder"))
-            .on_press(Message::OnSelectDir);
-        let dir_row = Row::new()
-            .spacing(10)
-            .padding(10)
-            .align_items(iced::Align::Center)
-            .push(dir_select_btn)
-            .push(dir_input_label)
-            .height(Length::Fill);
-
         let mut col = Column::new()
             .spacing(10)
+            .push(title)
             .push(dir_row)
             .push(filter_row)
             .width(Length::Fill)
@@ -284,7 +296,10 @@ impl Application for App {
             .height(Length::FillPortion(3)),
         );
 
-        col.into()
+        Container::new(col)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
     }
 }
 
