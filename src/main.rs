@@ -218,20 +218,20 @@ impl Application for App {
         } else {
             "Please select LoL folder."
         };
-        let dir_input_label = Text::new(dir_text);
+        let dir_input_label = Text::new(dir_text).width(Length::Fill);
         let dir_select_btn = Button::new(
             &mut self.dir_select_btn,
-            Text::new("Select folder").size(16),
+            Text::new("Select Folder").size(16),
         )
-        .height(Length::Fill)
+        .height(Length::Units(40))
         .on_press(Message::OnSelectDir);
         let dir_row = Row::new()
             .spacing(10)
-            .padding(10)
+            .padding(4)
             .align_items(Alignment::Center)
             .push(dir_select_btn)
             .push(dir_input_label)
-            .height(Length::Fill);
+            .height(Length::Units(50));
 
         let search_label = Text::new("Filter:");
         let search_input = TextInput::new(
@@ -244,11 +244,11 @@ impl Application for App {
         .width(Length::FillPortion(5));
         let filter_row = Row::new()
             .spacing(10)
-            .padding(10)
+            .padding(4)
             .align_items(Alignment::Center)
             .push(search_label)
             .push(search_input)
-            .height(Length::FillPortion(1));
+            .height(Length::Units(50));
 
         let mut col = Column::new()
             .spacing(10)
@@ -259,10 +259,10 @@ impl Application for App {
             .height(Length::Fill);
 
         let mut scrollable = Scrollable::new(&mut self.variants.scrollable)
-            .padding(10)
             .spacing(10)
+            .padding(4)
             .width(Length::Fill)
-            .height(Length::FillPortion(5));
+            .height(Length::Fill);
 
         for i in self.items.iter() {
             let label = i.label.to_string();
@@ -271,32 +271,32 @@ impl Application for App {
             let visible = label.contains(&self.search);
 
             if visible {
-                let cb = Checkbox::new(checked, label, move |checked| {
+                let cb = Checkbox::new(checked, label.to_uppercase(), move |checked| {
                     Message::ToggleSource(checked, value.to_string())
                 });
                 scrollable = scrollable.push(cb);
             }
         }
-
         col = col.push(scrollable);
 
-        col = col.push(Container::new(Checkbox::new(
-            self.keep_old,
-            "Keep old builds",
-            move |checked| Message::ToggleKeepOld(checked),
-        )));
+        let check_btn = Row::new()
+            .padding(4)
+            .height(Length::Units(50))
+            .push(Checkbox::new(
+                self.keep_old,
+                "Keep old builds",
+                move |checked| Message::ToggleKeepOld(checked),
+            ));
+        col = col.push(check_btn);
 
-        col = col.push(
-            Container::new(
-                Button::new(&mut self.btn, Text::new("Click me")).on_press(Message::OnClick),
-            )
-            .padding(10)
-            .center_x()
-            .center_y()
-            .height(Length::FillPortion(3)),
-        );
+        let ctrl_row = Row::new()
+            .padding(4)
+            .height(Length::Units(50))
+            .push(Button::new(&mut self.btn, Text::new("Click me")).on_press(Message::OnClick));
+        col = col.push(ctrl_row);
 
         Container::new(col)
+            .padding(10)
             .width(Length::Fill)
             .height(Length::Fill)
             .into()
