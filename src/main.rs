@@ -9,6 +9,7 @@ use iced::{
 pub mod builds;
 pub mod lcu;
 pub mod web;
+pub mod fonts;
 
 #[macro_use]
 extern crate lazy_static;
@@ -19,7 +20,7 @@ fn main() -> Result<(), iced::Error> {
     let mut settings = Settings::default();
     settings.window.size = (320, 540);
     // settings.window.resizable = false;
-    settings.default_font = Some(include_bytes!("../wqy-microhei.ttc"));
+    settings.default_font = Some(include_bytes!("../assets/fonts/wqy-microhei.ttc"));
     App::run(settings)
 }
 
@@ -208,6 +209,7 @@ impl Application for App {
 
     fn view(&mut self) -> Element<Message> {
         let title = Text::new("ChampR")
+            .font(fonts::CINZEL_DECORATIVE)
             .size(40)
             .color(Color::from_rgb8(242, 203, 5))
             .width(Length::Fill)
