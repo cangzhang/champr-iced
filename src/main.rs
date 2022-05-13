@@ -1,15 +1,16 @@
 // use font_kit::source::SystemSource;
 use iced::alignment::Horizontal;
 use iced::{
-    button, executor, scrollable, text_input, time, Alignment, Application, Button, Checkbox,
-    Color, Column, Command, Container, Element, Length, Row, Scrollable, Settings, Subscription,
-    Text, TextInput,
+    button, executor, image, scrollable, text_input, time, Alignment, Application, Button,
+    Checkbox, Color, Column, Command, Container, Element, Image, Length, Row, Scrollable, Settings,
+    Subscription, Text, TextInput,
 };
 
 pub mod builds;
+pub mod fonts;
+pub mod images;
 pub mod lcu;
 pub mod web;
-pub mod fonts;
 
 #[macro_use]
 extern crate lazy_static;
@@ -214,6 +215,17 @@ impl Application for App {
             .color(Color::from_rgb8(242, 203, 5))
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center);
+        let title_row = Row::new()
+            .spacing(10)
+            .align_items(Alignment::Center)
+            .height(Length::Units(60))
+            .push(
+                Image::new(image::Handle::from_memory(
+                    images::APP_ICON.as_ref().to_vec(),
+                ))
+                .height(Length::Units(50)),
+            )
+            .push(title);
 
         let dir_text = if self.lol_dir.chars().count() > 0 {
             &self.lol_dir
@@ -254,7 +266,7 @@ impl Application for App {
 
         let mut col = Column::new()
             .spacing(10)
-            .push(title)
+            .push(title_row)
             .push(dir_row)
             .push(filter_row)
             .width(Length::Fill)
