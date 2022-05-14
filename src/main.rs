@@ -1,9 +1,7 @@
-// use font_kit::source::SystemSource;
-use iced::alignment::Horizontal;
 use iced::{
-    button, executor, image, scrollable, text_input, time, Alignment, Application, Button,
-    Checkbox, Color, Column, Command, Container, Element, Image, Length, Row, Scrollable, Settings,
-    Subscription, Text, TextInput,
+    alignment, button, executor, image, scrollable, text_input, time, Alignment, Application,
+    Button, Checkbox, Color, Column, Command, Container, Element, Image, Length, Row, Scrollable,
+    Settings, Subscription, Text, TextInput,
 };
 
 pub mod builds;
@@ -106,8 +104,8 @@ fn lcu_auth_handler(ret: anyhow::Result<String>) -> Message {
 }
 
 impl Application for App {
-    type Message = Message;
     type Executor = executor::Default;
+    type Message = Message;
     type Flags = ();
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
@@ -118,11 +116,7 @@ impl Application for App {
     }
 
     fn title(&self) -> String {
-        String::from("ChampR [rust]")
-    }
-
-    fn subscription(&self) -> Subscription<Message> {
-        time::every(std::time::Duration::from_secs(3)).map(|_| Message::Tick)
+        String::from("ChampR.rs")
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
@@ -200,7 +194,7 @@ impl Application for App {
             }
             Message::OnGetLcuAuth(auth) => {
                 if self.lcu_auth_url != auth && auth.len() > 0 {
-                    println!("update lcu auth");
+                    println!("update lcu auth, {}", auth);
                     self.lcu_auth_url = auth;
                 }
                 Command::none()
@@ -208,22 +202,27 @@ impl Application for App {
         }
     }
 
+    fn subscription(&self) -> Subscription<Message> {
+        time::every(std::time::Duration::from_secs(5)).map(|_| Message::Tick)
+    }
+
     fn view(&mut self) -> Element<Message> {
         let title = Text::new("ChampR")
             .font(fonts::CINZEL_DECORATIVE)
             .size(40)
             .color(Color::from_rgb8(242, 203, 5))
-            .width(Length::Fill)
-            .horizontal_alignment(Horizontal::Center);
+            .height(Length::Fill)
+            .vertical_alignment(alignment::Vertical::Center);
         let title_row = Row::new()
             .spacing(10)
             .align_items(Alignment::Center)
-            .height(Length::Units(60))
+            .height(Length::Units(50))
             .push(
                 Image::new(image::Handle::from_memory(
                     images::APP_ICON.as_ref().to_vec(),
                 ))
-                .height(Length::Units(50)),
+                .height(Length::Units(40))
+                .width(Length::Units(40)),
             )
             .push(title);
 
@@ -232,12 +231,15 @@ impl Application for App {
         } else {
             "Please select LoL folder."
         };
-        let dir_input_label = Text::new(dir_text).width(Length::Fill);
+        let dir_input_label = Text::new(dir_text)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .vertical_alignment(alignment::Vertical::Center);
         let dir_select_btn = Button::new(
             &mut self.dir_select_btn,
             Text::new("Select Folder").size(16),
         )
-        .height(Length::Units(40))
+        // .height(Length::Units(40))
         .on_press(Message::OnSelectDir);
         let dir_row = Row::new()
             .spacing(10)
@@ -287,7 +289,8 @@ impl Application for App {
             if visible {
                 let cb = Checkbox::new(checked, label.to_uppercase(), move |checked| {
                     Message::ToggleSource(checked, value.to_string())
-                });
+                })
+                .text_size(16);
                 scrollable = scrollable.push(cb);
             }
         }
