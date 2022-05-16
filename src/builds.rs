@@ -1,7 +1,8 @@
 use std::{
     fs::{self, File},
     io::Write,
-    path::Path, sync::mpsc,
+    path::Path,
+    sync::mpsc,
 };
 
 use anyhow::Result;

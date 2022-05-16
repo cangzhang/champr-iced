@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate lazy_static;
+
+use iced::ContentFit::Contain;
 use iced::{
     alignment, button, executor, image, scrollable, text_input, time, Alignment, Application,
     Button, Checkbox, Color, Column, Command, Container, Element, Image, Length, Row, Scrollable,
@@ -9,9 +13,6 @@ pub mod fonts;
 pub mod images;
 pub mod lcu;
 pub mod web;
-
-#[macro_use]
-extern crate lazy_static;
 
 fn main() -> Result<(), iced::Error> {
     tracing_subscriber::fmt::init();
@@ -268,7 +269,7 @@ impl Application for App {
 
         let mut col = Column::new()
             .spacing(10)
-            .push(title_row)
+            .push(Container::new(title_row).center_x().width(Length::Fill))
             .push(dir_row)
             .push(filter_row)
             .width(Length::Fill)
