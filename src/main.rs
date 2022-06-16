@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
 
-use iced::ContentFit::Contain;
+use iced::window::Mode;
 use iced::{
     alignment, button, executor, image, scrollable, text_input, time, Alignment, Application,
     Button, Checkbox, Color, Column, Command, Container, Element, Image, Length, Row, Scrollable,
@@ -42,8 +42,10 @@ struct App {
     lol_dir: String,
     keep_old: bool,
     dir_select_btn: button::State,
+    rune_ctrl_btn: button::State,
 
     lcu_auth_url: String,
+    show_runes: bool,
 }
 
 impl App {
@@ -81,6 +83,7 @@ enum Message {
     OnSelectDir,
     Tick,
     OnGetLcuAuth(String),
+    OnToggleRunes,
 }
 
 fn result_handler(ret: anyhow::Result<Vec<web::Source>>) -> Message {
@@ -152,6 +155,10 @@ impl Application for App {
                     apply_result_handler,
                 )
             }
+            Message::OnToggleRunes => {
+                self.show_runes = !self.show_runes;
+                Command::none()
+            }
             Message::OnFetchList(list) => {
                 let mut items: Vec<SourceItem> = vec![];
                 for i in list {
@@ -205,6 +212,10 @@ impl Application for App {
 
     fn subscription(&self) -> Subscription<Message> {
         time::every(std::time::Duration::from_secs(5)).map(|_| Message::Tick)
+    }
+
+    fn mode(&self) -> Mode {
+        todo!()
     }
 
     fn view(&mut self) -> Element<Message> {
@@ -272,7 +283,7 @@ impl Application for App {
             .push(Container::new(title_row).center_x().width(Length::Fill))
             .push(dir_row)
             .push(filter_row)
-            .width(Length::Fill)
+            .width(Length::FillPortion(1))
             .height(Length::Fill);
 
         let mut scrollable = Scrollable::new(&mut self.variants.scrollable)
@@ -308,12 +319,26 @@ impl Application for App {
         col = col.push(check_btn);
 
         let ctrl_row = Row::new()
+            .spacing(10)
             .padding(4)
             .height(Length::Units(50))
-            .push(Button::new(&mut self.btn, Text::new("Click me")).on_press(Message::OnClick));
+            .push(Button::new(&mut self.btn, Text::new("Apply")).on_press(Message::OnClick))
+            .push(
+                Button::new(&mut self.rune_ctrl_btn, Text::new("Show Runes"))
+                    .on_press(Message::OnToggleRunes),
+            );
         col = col.push(ctrl_row);
 
-        Container::new(col)
+        let mut row = Row::new().width(Length::Fill).height(Length::Fill);
+        row = row.push(col);
+        if self.show_runes {
+            let rune_col = Column::new()
+                .width(Length::FillPortion(1))
+                .height(Length::Fill);
+            row = row.push(rune_col);
+        }
+
+        Container::new(row)
             .padding(10)
             .width(Length::Fill)
             .height(Length::Fill)
